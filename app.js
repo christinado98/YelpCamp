@@ -16,15 +16,18 @@ var campgroundRoutes    = require("./routes/campgrounds"),
     commentRoutes       = require("./routes/comments"),
     authRoutes          = require("./routes/index");
 
-console.log(process.env.DATABASEURL);
+// In case something went wrong, use local database on cloud9
+var url = process.env.DATABASEURL || "mongodb://localhost/yelp_camp"
+mongoose.connect(url, { useNewUrlParser: true });
 // CONFIG
 mongoose.connect(process.env.DATABASEURL, {useNewUrlParser: true});
-// mongoose.connect("mongodb://christina398:viW372vig@ds255262.mlab.com:55262/yelpcampviewer");
 app.use(bodyParser.urlencoded({extended: true})); //tell body-parser to parse string into JS object
 app.set("view engine", "ejs");
 app.use(express.static(__dirname + "/public"));
 app.use(methodOverride("_method"));
 app.use(flash());
+app.locals.moment = require("moment");
+
 
 //Seed database
 // seedDB();
@@ -35,6 +38,7 @@ app.use(require("express-session")({
     resave: false,
     saveUninitialized: false
 }));
+
 
 // Use passport for user authentication
 app.use(passport.initialize());

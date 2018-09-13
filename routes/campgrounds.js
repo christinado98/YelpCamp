@@ -9,14 +9,32 @@ var express = require("express"),
 
 // INDEX: show all the campgrounds from DB 
 router.get("/", function(req, res){
-    Campground.find({}, function(err, allCampgrounds){
-        if (err){
-            console.log(err);
-        }
-        else{ 
-            res.render("campgrounds/index", {campgrounds: allCampgrounds, page: "campgrounds"}); 
-        }
-    });
+    var noMatch;
+    // Do a fuzzy search
+    if (req.query.search){
+        const regex = new RegExp(escapeRegex(req.query.search), "gi"); 
+        Campground.find({name: regex}, function(err, allCampgrounds){
+            if (err){
+                console.log(err);
+            }
+            else{ 
+                if(allCampgrounds.length < 1){
+                    noMatch = "No campgrounds match your search, please try again.";
+                }
+                res.render("campgrounds/index", {noMatch: noMatch, campgrounds: allCampgrounds, page: "campgrounds"}); 
+            }
+        });        
+    }
+    else {
+        Campground.find({}, function(err, allCampgrounds){
+            if (err){
+                console.log(err);
+            }
+            else{ 
+                res.render("campgrounds/index", {noMatch: noMatch, campgrounds: allCampgrounds, page: "campgrounds"}); 
+            }
+        });        
+    }
 });
 
 // CREATE: create a new campground
@@ -53,7 +71,7 @@ router.get("/:id", function(req, res){
     Campground.findById(req.params.id).populate("comments").exec(function(err, foundCampground){
        if (err || !foundCampground){
            console.log(err);
-           req.flassh("error", "Campground not existed!");
+           req.flash("error", "Campground not existed!");
            return res.redirect("/campgrounds");
        } 
        else{
@@ -97,5 +115,9 @@ router.delete("/:id", middleware.checkCampgroundOwnership, function(req, res){
         }
     })
 });
+
+function escapeRegex(text){
+    return text.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, "\\$&");
+}
 
 module.exports = router;
